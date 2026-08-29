@@ -292,7 +292,7 @@ const CONTENT = {
     recapHeading:"今日、あなたが書いたこと",
     recapNote:"この画面をとじると消えます。残したいときは、書き写しておいてください。",
     feedbackLabel:"このツールの応答に違和感があったら、教えてください。少しずつ直していきます。",
-    feedbackContact:"（ここに、問い合わせ先メールアドレスや連絡フォームのURLを入れてください）",
+    feedbackContact:"office@yu-town.org",
     restartLabel:"もう一度はじめから",
     modelLabel:"ビリーフ変容モデルを見る"
   },
@@ -375,6 +375,11 @@ function utownLinksHtml(){
       ? `<div class="res"><a class="name" href="${esc(l.value)}" target="_blank" rel="noopener">${esc(l.label)} →</a></div>`
       : `<div class="res"><div class="name">${esc(l.label)}</div><div><span class="note">${esc(l.value)}</span></div></div>`;
   }).join('');
+}
+function contactHtml(v){
+  if(/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) return `<a href="mailto:${esc(v)}">${esc(v)}</a>`;
+  if(/^https?:\/\//i.test(v)) return `<a href="${esc(v)}" target="_blank" rel="noopener">${esc(v)}</a>`;
+  return esc(v);
 }
 function utownBlockHtml(){
   const u = CONTENT.utown;
@@ -525,7 +530,7 @@ function renderClosing(){
       <div style="margin-top:20px;padding-top:4px;border-top:1px solid var(--line)">
         ${utownBlockHtml()}
       </div>
-      <p class="note">${esc(c.feedbackLabel)}<br>${esc(c.feedbackContact)}</p>
+      <p class="note">${esc(c.feedbackLabel)}<br>${contactHtml(c.feedbackContact)}</p>
       <button class="btn block" onclick="restart()">${esc(c.restartLabel)}</button>
       <button class="btn secondary block" onclick="go('model')">${esc(c.modelLabel)}</button>
     </div>`;
