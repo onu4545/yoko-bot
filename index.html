@@ -64,7 +64,6 @@
 <body>
 <header class="bar">
   <span class="brand">小沼陽子AIbot</span>
-  <button class="safety-link" id="crisisLink" onclick="showCrisis(false)"></button>
 </header>
 <div id="app"></div>
 <footer class="disc" id="disc"></footer>
@@ -310,7 +309,6 @@ const CONTENT = {
 /* ---------------- 以下は表示の仕組み（通常は編集不要） ---------------- */
 const app = document.getElementById('app');
 document.getElementById('disc').textContent = CONTENT.disclaimer;
-document.getElementById('crisisLink').textContent = CONTENT.crisis.linkLabel;
 
 let state = { view:'intro', concern:null, step:0, awaiting:false, transcript:[] };
 
