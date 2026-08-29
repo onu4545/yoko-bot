@@ -441,12 +441,10 @@ function renderOwn(){
 }
 
 function renderReflect(){
-  const steps = CONTENT.stepOrder;
   const bubbles = state.transcript.map(m => m.role === 'you'
     ? `<p class="who">あなた</p><div class="bubble you fade">${esc(m.text)}</div>`
     : `<p class="who">陽子bot</p><div class="bubble bot fade">${esc(m.text)}</div>`
   );
-  const dots = steps.map((_,i)=> i <= state.step ? '●' : '○').join(' ');
   let controls;
   if(state.awaiting){
     controls = `
@@ -463,7 +461,6 @@ function renderReflect(){
   app.innerHTML = `
     <div class="card">
       ${bubbles.join('')}
-      <div class="step-dots">${dots}</div>
       <div style="margin-top:14px">${controls}</div>
     </div>`;
   if(state.awaiting){
