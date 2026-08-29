@@ -125,9 +125,9 @@ const CONTENT = {
     heading: "優タウンに話しにくる",
     body: "優タウンは、不登校の子をもつ親が、安心して話せる場所です。同じ気持ちを抱えてきた人たちが、あなたを待っています。",
     links: [
-      { label:"公式サイト", value:"（ここに優タウンのサイトURLを入れてください）" },
-      { label:"相談する・申し込む", value:"（問い合わせフォームやLINE等のURLを入れてください）" },
-      { label:"朝Cafe・夜Cafe", value:"（親のつどいの案内ページURLを入れてください）" }
+      { label:"公式サイトを見る", value:"https://homeschooling-town.com/" },
+      { label:"公式LINEで相談する", value:"https://homeschooling-town.com/info/8238/" },
+      { label:"Instagramを見る", value:"https://www.instagram.com/homeschoolingtown/" }
     ],
     backLabel: "もどる"
   },
@@ -371,10 +371,9 @@ function render(){
 function utownLinksHtml(){
   return CONTENT.utown.links.map(l=>{
     const isUrl = /^https?:\/\//i.test(l.value);
-    const v = isUrl
-      ? `<a href="${esc(l.value)}" target="_blank" rel="noopener">${esc(l.value)}</a>`
-      : `<span class="note">${esc(l.value)}</span>`;
-    return `<div class="res"><div class="name">${esc(l.label)}</div><div>${v}</div></div>`;
+    return isUrl
+      ? `<div class="res"><a class="name" href="${esc(l.value)}" target="_blank" rel="noopener">${esc(l.label)} →</a></div>`
+      : `<div class="res"><div class="name">${esc(l.label)}</div><div><span class="note">${esc(l.value)}</span></div></div>`;
   }).join('');
 }
 function utownBlockHtml(){
