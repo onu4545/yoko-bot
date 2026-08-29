@@ -90,7 +90,7 @@ const CONTENT = {
     intro: [
       "こんにちは。ここは、NPO法人優タウン代表・小沼陽子の考え方をもとにした、不登校の親のための内省ツールです。",
       "このツールの主人公は、お子さんではなく「あなた」です。目的は不登校を解決することではありません。あなたが自分の不安や「ちゃんとしなければ」という思いに気づいて、少し楽になって、お子さんのとなりに立てるようになること。そのための問いかけを、順番にお渡ししていきます。",
-      "答えは、声に出しても、書いても、心の中だけでもかまいません。うまく言葉にならなくても大丈夫です。"
+      "質問は1つずつ届きます。あなたの言葉で答えを書きながら進みます。うまく言葉にならなければ、書かずに次へ進んでもかまいません。"
     ],
     startLabel: "はじめる"
   },
@@ -251,8 +251,11 @@ const CONTENT = {
   },
 
   stepOrder:["empathy","emotion","belief","reframe","action"],
-  continueLabel:"つづきを読む",
-  reflectDoneHeading:"ここまで読んでみて、どうでしたか",
+  replyPlaceholder:"思ったこと、答え、うまく言えない気持ち……そのまま書いてみてください。",
+  replySend:"送る",
+  replySkip:"書かずにつづける",
+  replyNote:"書いた内容はこの端末の中だけに残り、どこにも送信・保存されません。",
+  reflectDoneHeading:"ここまで、どうでしたか",
   againLabel:"もう少し、別のことも考えたい",
   finishLabel:"今日はここまでにする",
 
@@ -276,6 +279,8 @@ const CONTENT = {
       "よく、ここまで向き合いましたね。一度にぜんぶ整理しようとしなくて大丈夫です。今日、少しでも自分の気持ちに気づけたなら、それで十分だと思います。",
       "またしんどくなったら、いつでも戻ってきてください。"
     ],
+    recapHeading:"今日、あなたが書いたこと",
+    recapNote:"この画面をとじると消えます。残したいときは、書き写しておいてください。",
     feedbackLabel:"このツールの応答に違和感があったら、教えてください。少しずつ直していきます。",
     feedbackContact:"（ここに、問い合わせ先メールアドレスや連絡フォームのURLを入れてください）",
     restartLabel:"もう一度はじめから",
@@ -291,7 +296,7 @@ const CONTENT = {
 const app = document.getElementById('app');
 document.getElementById('disc').textContent = CONTENT.disclaimer;
 
-let state = { view:'intro', concern:null, stepIndex:0, transcript:[] };
+let state = { view:'intro', concern:null, step:0, awaiting:false, transcript:[] };
 
 function esc(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 function go(view){ state.view = view; render(); window.scrollTo(0,0); }
@@ -312,10 +317,33 @@ function matchConcern(text){
 }
 
 function startReflect(concern, youText){
+  const steps = CONTENT.stepOrder;
   state.concern = concern;
-  state.stepIndex = 0;
-  state.transcript = [{ role:'you', text: youText }];
+  state.step = 0;
+  state.awaiting = true;
+  state.transcript = [
+    { role:'you', text: youText },
+    { role:'bot', text: concern.steps[steps[0]] }
+  ];
   go('reflect');
+}
+
+function submitReply(text, skipped){
+  const steps = CONTENT.stepOrder;
+  text = (text || '').trim();
+  if(!skipped && text){
+    state.transcript.push({ role:'you', text });
+    if(checkCrisis(text)){ go('crisis'); return; }
+  }
+  if(state.step >= steps.length - 1){
+    state.awaiting = false;              // 最後の問いに答えた
+  } else {
+    state.step++;
+    state.transcript.push({ role:'bot', text: state.concern.steps[steps[state.step]] });
+    state.awaiting = true;
+  }
+  render();
+  window.scrollTo(0, document.body.scrollHeight);
 }
 
 function render(){
@@ -377,17 +405,18 @@ function renderOwn(){
 
 function renderReflect(){
   const steps = CONTENT.stepOrder;
-  const c = state.concern;
-  const bubbles = [];
-  bubbles.push(`<p class="who">あなた</p><div class="bubble you fade">${esc(state.transcript[0].text)}</div>`);
-  for(let i=0;i<=state.stepIndex && i<steps.length;i++){
-    bubbles.push(`<p class="who">陽子bot</p><div class="bubble bot fade">${esc(c.steps[steps[i]])}</div>`);
-  }
-  const dots = steps.map((_,i)=> i<=state.stepIndex ? '●' : '○').join(' ');
-  const more = state.stepIndex < steps.length-1;
+  const bubbles = state.transcript.map(m => m.role === 'you'
+    ? `<p class="who">あなた</p><div class="bubble you fade">${esc(m.text)}</div>`
+    : `<p class="who">陽子bot</p><div class="bubble bot fade">${esc(m.text)}</div>`
+  );
+  const dots = steps.map((_,i)=> i <= state.step ? '●' : '○').join(' ');
   let controls;
-  if(more){
-    controls = `<button class="btn block" id="cont">${esc(CONTENT.continueLabel)}</button>`;
+  if(state.awaiting){
+    controls = `
+      <textarea id="reply" placeholder="${esc(CONTENT.replyPlaceholder)}"></textarea>
+      <p class="note">${esc(CONTENT.replyNote)}</p>
+      <button class="btn block" id="send">${esc(CONTENT.replySend)}</button>
+      <button class="btn secondary block" id="skip">${esc(CONTENT.replySkip)}</button>`;
   } else {
     controls = `
       <p class="who">${esc(CONTENT.reflectDoneHeading)}</p>
@@ -400,8 +429,14 @@ function renderReflect(){
       <div class="step-dots">${dots}</div>
       <div style="margin-top:14px">${controls}</div>
     </div>`;
-  if(more){
-    app.querySelector('#cont').onclick = ()=>{ state.stepIndex++; render(); window.scrollTo(0,document.body.scrollHeight); };
+  if(state.awaiting){
+    const ta = app.querySelector('#reply');
+    app.querySelector('#send').onclick = ()=> submitReply(ta.value, false);
+    app.querySelector('#skip').onclick = ()=> submitReply('', true);
+    ta.addEventListener('keydown', e=>{
+      if((e.metaKey || e.ctrlKey) && e.key === 'Enter') submitReply(ta.value, false);
+    });
+    ta.focus();
   }
 }
 
@@ -444,17 +479,23 @@ function renderModel(){
 
 function renderClosing(){
   const c = CONTENT.closing;
+  const written = state.transcript.filter(m => m.role === 'you').map(m => m.text);
+  const recap = written.length ? `
+      <h2>${esc(c.recapHeading)}</h2>
+      ${written.map(t=>`<div class="bubble you">${esc(t)}</div>`).join('')}
+      <p class="note">${esc(c.recapNote)}</p>` : '';
   app.innerHTML = `
     <div class="card fade">
       <h1>${esc(c.heading)}</h1>
       ${c.body.map(p=>`<p>${esc(p)}</p>`).join('')}
+      ${recap}
       <p class="note">${esc(c.feedbackLabel)}<br>${esc(c.feedbackContact)}</p>
       <button class="btn block" onclick="restart()">${esc(c.restartLabel)}</button>
       <button class="btn secondary block" onclick="go('model')">${esc(c.modelLabel)}</button>
     </div>`;
 }
 
-function restart(){ state = { view:'intro', concern:null, stepIndex:0, transcript:[] }; render(); window.scrollTo(0,0); }
+function restart(){ state = { view:'intro', concern:null, step:0, awaiting:false, transcript:[] }; render(); window.scrollTo(0,0); }
 
 render();
 </script>
