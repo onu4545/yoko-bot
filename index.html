@@ -1,0 +1,462 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>小沼陽子AIbot｜不登校の親のための内省コーチ</title>
+<style>
+  :root{
+    --bg:#faf6f0; --card:#ffffff; --ink:#3a3330; --ink-soft:#6b625b;
+    --accent:#b4694e; --accent-ink:#ffffff; --line:#e9e0d6;
+    --you:#efe7dd; --bot:#fbf7f2;
+    --radius:16px; --maxw:620px;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --bg:#1c1917; --card:#26221f; --ink:#ece5dc; --ink-soft:#a89e94;
+      --accent:#dd9077; --accent-ink:#241a15; --line:#3a332e;
+      --you:#332d28; --bot:#221e1b;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;
+    line-height:1.9; font-size:16.5px; -webkit-text-size-adjust:100%;
+  }
+  header.bar{max-width:var(--maxw);margin:0 auto;padding:14px 16px 0;display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+  .brand{font-weight:700;font-size:15px;letter-spacing:.02em}
+  .safety-link{font-size:12.5px;color:var(--accent);text-decoration:underline;cursor:pointer;background:none;border:0;padding:0;font-family:inherit}
+  #app{max-width:var(--maxw);margin:0 auto;padding:16px 16px 8px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:22px 20px;margin:14px 0;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+  h1{font-size:21px;line-height:1.6;margin:.2em 0 .6em}
+  h2{font-size:17px;margin:1.4em 0 .5em}
+  p{margin:.7em 0}
+  .lead{color:var(--ink-soft)}
+  .btn{display:inline-block;font:inherit;font-weight:600;border-radius:999px;padding:12px 22px;border:1.5px solid var(--accent);background:var(--accent);color:var(--accent-ink);cursor:pointer;text-align:center}
+  .btn.secondary{background:transparent;color:var(--accent)}
+  .btn.block{display:block;width:100%;margin:8px 0}
+  .btn:active{transform:translateY(1px)}
+  .choices .btn{background:var(--card);color:var(--ink);border-color:var(--line);text-align:left;font-weight:500;line-height:1.6;padding:14px 16px}
+  .choices .btn:hover{border-color:var(--accent)}
+  .bubble{border-radius:14px;padding:13px 16px;margin:10px 0;max-width:90%;white-space:pre-wrap}
+  .bubble.you{background:var(--you);margin-left:auto;border-bottom-right-radius:4px}
+  .bubble.bot{background:var(--bot);border:1px solid var(--line);border-bottom-left-radius:4px}
+  .who{font-size:12px;color:var(--ink-soft);margin:16px 0 -2px}
+  .fade{animation:fade .5s ease both}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion:reduce){.fade{animation:none}}
+  textarea{width:100%;min-height:110px;font:inherit;line-height:1.8;padding:12px 14px;border-radius:12px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);resize:vertical}
+  textarea:focus{outline:none;border-color:var(--accent)}
+  .note{font-size:13px;color:var(--ink-soft)}
+  .step-dots{font-size:12px;color:var(--ink-soft);letter-spacing:.35em;margin-top:4px}
+  .model-stage{border-left:3px solid var(--accent);padding:2px 0 2px 14px;margin:18px 0}
+  .model-stage .n{font-weight:700;color:var(--accent)}
+  .model-stage .k{font-size:13px;color:var(--ink-soft)}
+  .res{margin:12px 0;padding-bottom:12px;border-bottom:1px solid var(--line)}
+  .res .name{font-weight:700}
+  .res .contact{font-size:19px;letter-spacing:.02em;font-weight:700}
+  footer.disc{max-width:var(--maxw);margin:8px auto 34px;padding:0 16px;font-size:12px;color:var(--ink-soft)}
+  a{color:var(--accent)}
+</style>
+</head>
+<body>
+<header class="bar">
+  <span class="brand">小沼陽子AIbot</span>
+  <button class="safety-link" onclick="go('crisis')">いま安全が心配な方へ</button>
+</header>
+<div id="app"></div>
+<footer class="disc" id="disc"></footer>
+
+<script>
+/* =============================================================================
+   ▼▼▼ 応答内容の編集は、この CONTENT ブロックの中だけでできます ▼▼▼
+
+   ・文章を変えたいとき  … 各項目の " " の中を書き換えてください
+   ・相談の種類を足したいとき … concerns の [ ] の中に { } ブロックを1つ足す
+   ・危機ワードを足したいとき … crisis.triggerWords に単語を足す
+   ・相談窓口の番号を直したいとき … crisis.resources を編集
+   ・フィードバック先を入れるとき … closing.feedbackContact を書き換え
+
+   ※応答の順序は「受け止め → 感情の言語化 → ビリーフの仮説 → 別の見方 →
+     今日の小さな一歩」の5ステップです（システムプロンプトの会話フローに対応）。
+   ============================================================================= */
+const CONTENT = {
+
+  meta: {
+    title: "小沼陽子AIbot",
+    subtitle: "不登校の子をもつ親のための、内省をたすけるコーチ",
+    intro: [
+      "こんにちは。ここは、NPO法人優タウン代表・小沼陽子の考え方をもとにした、不登校の親のための内省ツールです。",
+      "このツールの主人公は、お子さんではなく「あなた」です。目的は不登校を解決することではありません。あなたが自分の不安や「ちゃんとしなければ」という思いに気づいて、少し楽になって、お子さんのとなりに立てるようになること。そのための問いかけを、順番にお渡ししていきます。",
+      "答えは、声に出しても、書いても、心の中だけでもかまいません。うまく言葉にならなくても大丈夫です。"
+    ],
+    startLabel: "はじめる"
+  },
+
+  /* 危機対応：自由記述にこれらの語が含まれたら、問いかけより先にこの画面を出します */
+  crisis: {
+    triggerWords: [
+      "死にたい","死にたく","死ぬ","死のう","死ね","消えたい","いなくなりたい","自殺",
+      "リストカット","リスカ","自傷","手首","腕を切","首を","薬を大量","オーバードーズ",
+      "食べない","食べれな","食べられな","拒食","過食嘔吐","吐いて",
+      "家出","帰ってこない","戻ってこない","失踪",
+      "暴れ","暴力","殴","蹴","刃物","包丁","ベランダ","飛び降り","窓から",
+      "助けて","もう限界","限界です"
+    ],
+    heading: "いま、すぐに頼ってほしいところがあります",
+    body: [
+      "書いてくださった内容から、お子さんかあなた自身の安全が心配な状況かもしれない、と感じました。",
+      "こういうときは、じっくり考える前に、まず人の手を借りてください。ひとりで抱えないでください。助けを求めることは、弱さではありません。"
+    ],
+    resources: [
+      { name:"いのちの電話（ナビダイヤル）", tel:"0570783556", contact:"0570-783-556", note:"つらい気持ちを聞いてもらえます（毎日／時間は地域により異なります）" },
+      { name:"こころの健康相談統一ダイヤル", tel:"0570064556", contact:"0570-064-556", note:"お住まいの地域の公的な相談窓口につながります" },
+      { name:"24時間子供SOSダイヤル", tel:"0120078310", contact:"0120-0-78310", note:"子ども本人も保護者も、24時間相談できます" },
+      { name:"チャイルドライン（18歳まで）", tel:"0120997777", contact:"0120-99-7777", note:"お子さん本人が話したいとき（16〜21時）" },
+      { name:"児童相談所虐待対応ダイヤル", tel:"189", contact:"189", note:"家庭内で危険が迫っているとき" },
+      { name:"緊急のとき", tel:"110", contact:"110番 ・ 119番", note:"いのちに関わる危険があるときは、迷わず通報してください" }
+    ],
+    footer: "かかりつけ医、精神科・心療内科、学校のスクールカウンセラー、お住まいの地域の児童相談所も、頼れる相手です。落ち着いたら、またこのツールに戻ってきてください。",
+    backLabel: "はじめの画面にもどる"
+  },
+
+  selectHeading: "いま、何が一番つらいですか。近いものを選んでください。",
+  ownWordsLabel: "あてはまるものがない／自分の言葉で書く",
+  ownWordsPrompt: "いま感じていること、起きていることを、そのまま書いてみてください。",
+  ownWordsSend: "送る",
+
+  /* 相談の種類。steps は5ステップ。1つのカードに質問は1つまで。 */
+  concerns: [
+    {
+      id:"morning",
+      label:"朝になると、子どもが動けない",
+      keywords:["朝","起きられ","起きれな","起きない","布団から","動けない","だるい","頭痛","腹痛","ふとん","遅刻"],
+      steps:{
+        empathy:"朝、お子さんが動けなくなる。その姿を毎日そばで見ているのは、ほんとうにつらいことだと思います。時間だけが過ぎていって、どうしていいか分からなくなりますよね。",
+        emotion:"いまのあなたの中には、「なんとかしなきゃ」という焦りと、「このままでいいのだろうか」という不安が、同時にあるのかもしれません。",
+        belief:"その奥に、「子どもを学校に行かせるのが、親としての役目だ」という思いが、少しありませんか。もしあっても、それはとても自然なことです。私自身もそうでした。",
+        reframe:"動けない朝というのは、お子さんが怠けているのではなくて、心と体が「いまは無理だよ」と精いっぱい伝えているサインなのかもしれません。動けなくなっているのはお子さんですが、となりで一番苦しいのは、あなた自身なのだと思います。",
+        action:"今日、お子さんに何かをさせることではなく、あなた自身が少しだけほっとするためにできそうなことを、一つ挙げるとしたら何でしょう。"
+      }
+    },
+    {
+      id:"game",
+      label:"ゲームや動画ばかりしている（何時間までならいいの？）",
+      keywords:["ゲーム","スマホ","youtube","ユーチューブ","動画","タブレット","switch","スイッチ","何時間","時間制限","課金","ネット","依存"],
+      steps:{
+        empathy:"一日じゅうゲームや動画を見ている姿を見ていると、「このままで大丈夫なのかな」と心配になりますよね。「何時間までならいいですか」と聞きたくなる気持ち、とてもよく分かります。基準があれば、少し安心できますから。",
+        emotion:"いまのあなたは、「何か正しい線引きを知りたい」という気持ちと、それが分からない不安の中にいるのかもしれません。",
+        belief:"正直にお伝えすると、「何時間までなら大丈夫」という一律の答えは、私にはありません。同じようにゲームをしていても、その子にとってそれが逃げ場なのか、唯一つながれる世界なのか、ただの暇つぶしなのかで、意味がまるで違うからです。",
+        reframe:"時間の長さよりも、「この子にとって、いまゲームは何なんだろう」と眺めてみると、見えてくるものがあるかもしれません。取り上げることより先に、その子の世界を知ることのほうが、遠回りなようで近道なことがあります。",
+        action:"お子さんがゲームをしているとき、どんな表情をしていますか。楽しそう、必死、無表情——どれに近いか、今日そっと見てみるとしたら、どうでしょう。"
+      }
+    },
+    {
+      id:"partner",
+      label:"夫・パートナーが分かってくれない",
+      keywords:["夫","旦那","パートナー","妻","父親","義母","義父","単身赴任","価値観","けんか","喧嘩","温度差","協力してくれ"],
+      steps:{
+        empathy:"一番そばにいてほしい人に分かってもらえないのは、ひとりで戦っているような、深い孤独だと思います。",
+        emotion:"「どうして分かってくれないの」という怒りと、「分かってほしい」というさみしさが、混じっているのかもしれません。",
+        belief:"お二人とも、お子さんを大事に思っている。それは同じなのだと思います。ただ、その「大事にしたい」の中身——何を怖いと感じているか——が、少しずれているのかもしれません。",
+        reframe:"「どっちが正しいか」を決めようとすると、たいてい平行線になります。それより、「あなたは何がいちばん怖い？」とお互いに聞き合えると、同じ方向を向きやすくなることがあります。",
+        action:"パートナーの方は、いまの状況の何を一番心配していそうですか。想像で言葉にしてみるとしたら、どうでしょう。"
+      }
+    },
+    {
+      id:"school",
+      label:"学校から連絡が来るのが苦しい",
+      keywords:["学校から","担任","先生から","電話","プリント","連絡","家庭訪問","出席","欠席連絡","スクールカウンセラー"],
+      steps:{
+        empathy:"学校から電話やメールが来るたびに、体がこわばる。その苦しさ、よく分かります。連絡が来ること自体が、責められているように感じてしまいますよね。",
+        emotion:"いまのあなたの中には、「また何か言われるかもしれない」という緊張と、「きちんと対応しなきゃ」という気の張りがあるのかもしれません。",
+        belief:"その奥に、「親としてちゃんと対応できていない」と思われたくない、という気持ちがありませんか。もしあっても、自然なことだと思います。",
+        reframe:"学校からの連絡は、多くの場合「敵からの攻撃」ではなく、決まった手続きとして来ています。それでもつらいのは、あなたがそれだけ真剣にお子さんと向き合っている証なのだと思います。",
+        action:"連絡への対応で、「ここまではするけれど、これ以上はしない」という線を一つ決めるとしたら、どこに引けそうですか。"
+      }
+    },
+    {
+      id:"yell",
+      label:"子どもに怒鳴ってしまった",
+      keywords:["怒鳴","どなっ","怒って","キレ","声を荒げ","手をあげ","たたい","叩い","ぶってしま","感情的","当たってしま"],
+      steps:{
+        empathy:"怒鳴ってしまったあと、きっとご自分をすごく責めていますよね。その後悔を感じられること自体が、あなたがお子さんを大切に思っている証だと思います。",
+        emotion:"いまのあなたは、罪悪感と、「またやってしまうかもしれない」という怖さの中にいるのかもしれません。",
+        belief:"怒鳴ってしまうときは、たいてい怒りの下に、もっと大きな「怖さ」が隠れています。「この子はどうなってしまうんだろう」という怖さが、怒りの形で出てしまうことがあります。",
+        reframe:"あなたが未熟だから怒鳴ったのではなくて、それだけ追いつめられていた、ということなのだと思います。まず助けが必要なのは、お子さんより先に、あなた自身かもしれません。",
+        action:"この前、怒鳴ってしまう直前、あなたの心にはどんな考えがよぎっていましたか。思い出せる範囲で、どうでしょう。"
+      }
+    },
+    {
+      id:"freeschool",
+      label:"フリースクールや別の場所も拒否された",
+      keywords:["フリースクール","適応指導教室","教育支援センター","習い事","どこも行きたくない","別の場所","転校","居場所"],
+      steps:{
+        empathy:"学校がだめならフリースクール、と思って探して、そこも「行きたくない」と言われる。よかれと思って動いたぶん、力が抜けてしまいますよね。",
+        emotion:"いまのあなたは、「次はどうすれば」という焦りと、「もう打つ手がない」という疲れの、両方の中にいるのかもしれません。",
+        belief:"その動きの底に、「どこか、外に正解の居場所があるはずだ」という思いがありませんか。私も長いあいだ、そう思って探し続けていました。",
+        reframe:"お子さんが拒んでいるのは「フリースクール」という場所そのものより、「また新しい場所に適応させられること」かもしれません。新しい場所を足すより、いまの家での時間が安心できるものになることのほうが、先なのかもしれません。",
+        action:"もし当分、新しい場所を探すのをお休みするとしたら、あなた自身はどんな気持ちになりそうですか。ほっとする、不安、どちらもあるかもしれません。"
+      }
+    },
+    {
+      id:"future",
+      label:"この子の将来が不安（この先どうなるのか）",
+      keywords:["将来","この先","進学","受験","高校","中卒","就職","仕事につ","ひきこもり","大人になって","自立","どうなる","不安で眠れ"],
+      steps:{
+        empathy:"「この子はこの先どうなるんだろう」——夜、ふと考えて眠れなくなる。その不安、とてもよく分かります。",
+        emotion:"「将来」という言葉は大きくて漠然としているぶん、不安もどこまでも広がってしまいますよね。",
+        belief:"その不安の中身を、いまの言葉にしてみると、どうでしょう。「進学できないかも」「仕事につけないかも」「ひとりぼっちになるかも」——どれが一番近いですか。漠然としたままだと、こわさだけが大きくなっていきます。",
+        reframe:"不登校だった子が、そのあとどう生きていくかは、ほんとうに一人ひとり違います。これまで千人以上の親子と関わってきましたが、「こうなる」という決まった道はありませんでした。いまのお子さんの状態が、10年後を決めるわけではないのだと思います。",
+        action:"さきほどの「一番近い不安」について、それが現実になったとしても「これがあれば大丈夫」と思えるものが一つあるとしたら、何でしょう。"
+      }
+    },
+    {
+      id:"relatives",
+      label:"親戚に、育て方のせいだと責められる",
+      keywords:["親戚","義母","義父","姑","実家","祖父母","育て方","しつけ","甘やか","あなたのせい","母親のせい","責められ"],
+      steps:{
+        empathy:"育て方のせいだと言われる。ただでさえ自分を責めているところに、外からもぶつけられて、逃げ場がないですよね。",
+        emotion:"いまのあなたは、傷つきと、「そうなのかもしれない」という揺らぎの中にいるのかもしれません。",
+        belief:"そう言われて苦しいのは、心のどこかで「良い親とは、子どもを問題なく育てる親だ」という物差しを、あなた自身も持っているからかもしれません。その物差しで測ると、誰だってしんどくなります。",
+        reframe:"「良い親」の定義は、一つではありません。子どものそばに居続けることも、子どもの人生に伴走することも、立派な「良い親」です。親戚の言葉は、その方自身の物差しであって、あなたの真実ではないのだと思います。",
+        action:"あなたにとって「こういう親でありたい」という姿を、一つだけ言葉にするとしたら、どんな言葉になりますか。"
+      }
+    },
+    {
+      id:"money",
+      label:"私が落ち着けば…と思うけれど、お金の不安もある",
+      keywords:["お金","経済的","仕事を辞め","働け","パート","収入","生活費","余裕がな","専業","時短","家計","辞めたい"],
+      steps:{
+        empathy:"「私が落ち着けば、子どもも落ち着くのかもしれない」——そう思えること自体が、大きな気づきだと思います。そして同時に、お金の心配もある。どちらも、とても大事なことですよね。",
+        emotion:"いまのあなたは、「自分を整えたい」という願いと、「現実はそう簡単じゃない」という制約の間で、揺れているのかもしれません。",
+        belief:"この二つは、どちらかを選ぶものではないと思います。お金の心配は、簡単に脇に置けるものではありません。だからこそ、いったん分けて考えてみたいのです。",
+        reframe:"もしお金の心配がいったんなかったとしたら、あなたは本当はどうしたいですか。仕事を減らしたい、そばにいたい、自分の時間がほしい——出てきた答えが、あなたの「本当の望み」です。制約と望みを分けると、いまできる小さな工夫が見つかることがあります。",
+        action:"いま出てきた「本当はこうしたい」を、10分の1のサイズにするとしたら、今日できることは何かありますか。"
+      }
+    }
+  ],
+
+  /* 自由記述で、どの相談にも当てはまらなかったときのフロー */
+  generic:{
+    steps:{
+      empathy:"話してくださって、ありがとうございます。うまく言葉にならない部分も含めて、いま、とてもしんどい状況なのだと思います。",
+      emotion:"いちど、お子さんの状態から離れてみます。いま、あなた自身の心にいちばん重くのしかかっているのは、どんな気持ちですか。焦り、不安、怒り、疲れ、さみしさ——近いものはありますか。",
+      belief:"不登校の親御さんの多くが、心のどこかに「親として、ちゃんとしなければ」という思いを持っています。あなたには、そういう思いがありますか。あっても、まったくおかしくありません。",
+      reframe:"このツールがお伝えしたいのは、「不登校を解決しましょう」ということではありません。あなたが自分の気持ちに気づいて、少し楽になって、お子さんのとなりに立てるようになること。主人公は、お子さんではなく、あなたです。",
+      action:"今日、お子さんのためではなく、あなた自身が少しほっとするためにできそうなことを、一つ挙げるとしたら何でしょう。"
+    }
+  },
+
+  stepOrder:["empathy","emotion","belief","reframe","action"],
+  continueLabel:"つづきを読む",
+  reflectDoneHeading:"ここまで読んでみて、どうでしたか",
+  againLabel:"もう少し、別のことも考えたい",
+  finishLabel:"今日はここまでにする",
+
+  model:{
+    heading:"親のビリーフ変容モデル（5段階）",
+    intro:"不登校の親の「世界の見方（ビリーフ）」は、時間をかけて次のように変わっていくことが多い、と考えています。いま自分がどのあたりにいるか、決めつけずに眺めてみてください。行ったり戻ったりするのが普通です。",
+    stages:[
+      { n:"①", belief:"学校に戻すことが親の役目", state:"焦り・不安・自責", events:"付き添い登校、なだめる・励ます・怒る、毎朝の欠席連絡", role:"まず感情を受け止め、状況を整理する" },
+      { n:"②", belief:"専門家なら何とかしてくれる（口では「行かなくていい」、心では「行ってほしい」）", state:"疲弊・不信・焦りの持続", events:"病院・カウンセラー・フリースクール探し、情報収集", role:"本音と建前の“ズレ”を、そっと仮説として返す" },
+      { n:"③", belief:"学校より命のほうが大切だ（生きていてくれるだけでいい）", state:"恐怖・危機感（身体レベル）", events:"食べなくなる、暴れる、家出する", role:"安全確保を最優先。専門機関・緊急相談へ橋渡し" },
+      { n:"④", belief:"変わるべきなのは子どもではなく私だった", state:"気づき・揺らぎ・解放感の芽生え", events:"自分と自分の親との関係を振り返る", role:"問い返しで気づきを深める。責めずに整理する" },
+      { n:"⑤", belief:"子どもも私も、自分らしく生きればいい", state:"安心・軽さ・自分の人生への関心", events:"子どものやりたいことを一緒に探す、親も新しいことを始める", role:"変化の継続を支える。親自身の人生へ問いかける" }
+    ],
+    note:"「出来事」と「ビリーフ」は別のものです。同じ出来事でも、その奥にある見方は人それぞれ違います。",
+    backLabel:"はじめの画面にもどる"
+  },
+
+  closing:{
+    heading:"今日はここまでにしましょう",
+    body:[
+      "よく、ここまで向き合いましたね。一度にぜんぶ整理しようとしなくて大丈夫です。今日、少しでも自分の気持ちに気づけたなら、それで十分だと思います。",
+      "またしんどくなったら、いつでも戻ってきてください。"
+    ],
+    feedbackLabel:"このツールの応答に違和感があったら、教えてください。少しずつ直していきます。",
+    feedbackContact:"（ここに、問い合わせ先メールアドレスや連絡フォームのURLを入れてください）",
+    restartLabel:"もう一度はじめから",
+    modelLabel:"ビリーフ変容モデルを見る"
+  },
+
+  disclaimer:"※このツールは、NPO法人優タウン・小沼陽子の考え方をもとに、あらかじめ用意された内省の道すじを案内するプログラムです。小沼陽子本人の返信ではなく、AIがその場で会話するものでもありません。医療的な診断・治療は行いません。"
+};
+/* ▲▲▲ 編集できるのはここまで ▲▲▲ ======================================== */
+
+
+/* ---------------- 以下は表示の仕組み（通常は編集不要） ---------------- */
+const app = document.getElementById('app');
+document.getElementById('disc').textContent = CONTENT.disclaimer;
+
+let state = { view:'intro', concern:null, stepIndex:0, transcript:[] };
+
+function esc(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function go(view){ state.view = view; render(); window.scrollTo(0,0); }
+
+function checkCrisis(text){
+  const t = text.toLowerCase();
+  return CONTENT.crisis.triggerWords.some(w => t.includes(String(w).toLowerCase()));
+}
+function matchConcern(text){
+  const t = text.toLowerCase();
+  let best=null, bestScore=0;
+  for(const c of CONTENT.concerns){
+    let s=0;
+    for(const k of (c.keywords||[])) if(t.includes(String(k).toLowerCase())) s++;
+    if(s>bestScore){ bestScore=s; best=c; }
+  }
+  return bestScore>0 ? best : null;
+}
+
+function startReflect(concern, youText){
+  state.concern = concern;
+  state.stepIndex = 0;
+  state.transcript = [{ role:'you', text: youText }];
+  go('reflect');
+}
+
+function render(){
+  const v = state.view;
+  if(v==='intro') return renderIntro();
+  if(v==='select') return renderSelect();
+  if(v==='own') return renderOwn();
+  if(v==='reflect') return renderReflect();
+  if(v==='crisis') return renderCrisis();
+  if(v==='model') return renderModel();
+  if(v==='closing') return renderClosing();
+}
+
+function renderIntro(){
+  app.innerHTML = `
+    <div class="card fade">
+      <h1>${esc(CONTENT.meta.title)}</h1>
+      <p class="lead">${esc(CONTENT.meta.subtitle)}</p>
+      ${CONTENT.meta.intro.map(p=>`<p>${esc(p)}</p>`).join('')}
+      <button class="btn block" onclick="go('select')">${esc(CONTENT.meta.startLabel)}</button>
+      <button class="btn secondary block" onclick="go('model')">${esc(CONTENT.closing.modelLabel)}</button>
+    </div>`;
+}
+
+function renderSelect(){
+  app.innerHTML = `
+    <div class="card fade">
+      <h2>${esc(CONTENT.selectHeading)}</h2>
+      <div class="choices">
+        ${CONTENT.concerns.map(c=>`<button class="btn block" data-id="${c.id}">${esc(c.label)}</button>`).join('')}
+        <button class="btn block secondary" onclick="go('own')">${esc(CONTENT.ownWordsLabel)}</button>
+      </div>
+    </div>`;
+  app.querySelectorAll('button[data-id]').forEach(b=>{
+    b.onclick = ()=>{
+      const c = CONTENT.concerns.find(x=>x.id===b.dataset.id);
+      startReflect(c, c.label);
+    };
+  });
+}
+
+function renderOwn(){
+  app.innerHTML = `
+    <div class="card fade">
+      <h2>${esc(CONTENT.ownWordsPrompt)}</h2>
+      <textarea id="ta" placeholder="例）朝は起きてこないのに、夜はずっとゲームをしています。将来を考えると不安で…"></textarea>
+      <p class="note">書いた内容はこの端末の中だけで処理され、どこにも送信・保存されません。</p>
+      <button class="btn block" id="send">${esc(CONTENT.ownWordsSend)}</button>
+      <button class="btn secondary block" onclick="go('select')">もどる</button>
+    </div>`;
+  app.querySelector('#send').onclick = ()=>{
+    const text = app.querySelector('#ta').value.trim();
+    if(!text) return;
+    if(checkCrisis(text)){ go('crisis'); return; }
+    const c = matchConcern(text) || { id:'generic', steps: CONTENT.generic.steps };
+    startReflect(c, text);
+  };
+}
+
+function renderReflect(){
+  const steps = CONTENT.stepOrder;
+  const c = state.concern;
+  const bubbles = [];
+  bubbles.push(`<p class="who">あなた</p><div class="bubble you fade">${esc(state.transcript[0].text)}</div>`);
+  for(let i=0;i<=state.stepIndex && i<steps.length;i++){
+    bubbles.push(`<p class="who">陽子bot</p><div class="bubble bot fade">${esc(c.steps[steps[i]])}</div>`);
+  }
+  const dots = steps.map((_,i)=> i<=state.stepIndex ? '●' : '○').join(' ');
+  const more = state.stepIndex < steps.length-1;
+  let controls;
+  if(more){
+    controls = `<button class="btn block" id="cont">${esc(CONTENT.continueLabel)}</button>`;
+  } else {
+    controls = `
+      <p class="who">${esc(CONTENT.reflectDoneHeading)}</p>
+      <button class="btn block" onclick="go('select')">${esc(CONTENT.againLabel)}</button>
+      <button class="btn secondary block" onclick="go('closing')">${esc(CONTENT.finishLabel)}</button>`;
+  }
+  app.innerHTML = `
+    <div class="card">
+      ${bubbles.join('')}
+      <div class="step-dots">${dots}</div>
+      <div style="margin-top:14px">${controls}</div>
+    </div>`;
+  if(more){
+    app.querySelector('#cont').onclick = ()=>{ state.stepIndex++; render(); window.scrollTo(0,document.body.scrollHeight); };
+  }
+}
+
+function renderCrisis(){
+  const c = CONTENT.crisis;
+  app.innerHTML = `
+    <div class="card fade" style="border-color:var(--accent)">
+      <h1>${esc(c.heading)}</h1>
+      ${c.body.map(p=>`<p>${esc(p)}</p>`).join('')}
+      <div style="margin-top:10px">
+        ${c.resources.map(r=>`
+          <div class="res">
+            <div class="name">${esc(r.name)}</div>
+            <div class="contact"><a href="tel:${esc(r.tel)}">${esc(r.contact)}</a></div>
+            <div class="note">${esc(r.note)}</div>
+          </div>`).join('')}
+      </div>
+      <p>${esc(c.footer)}</p>
+      <button class="btn secondary block" onclick="go('intro')">${esc(c.backLabel)}</button>
+    </div>`;
+}
+
+function renderModel(){
+  const m = CONTENT.model;
+  app.innerHTML = `
+    <div class="card fade">
+      <h1>${esc(m.heading)}</h1>
+      <p class="lead">${esc(m.intro)}</p>
+      ${m.stages.map(s=>`
+        <div class="model-stage">
+          <p><span class="n">${esc(s.n)}</span>　${esc(s.belief)}</p>
+          <p class="k">親の状態：${esc(s.state)}</p>
+          <p class="k">代表的な出来事：${esc(s.events)}</p>
+          <p class="k">このツールの関わり方：${esc(s.role)}</p>
+        </div>`).join('')}
+      <p class="note">${esc(m.note)}</p>
+      <button class="btn secondary block" onclick="go('intro')">${esc(m.backLabel)}</button>
+    </div>`;
+}
+
+function renderClosing(){
+  const c = CONTENT.closing;
+  app.innerHTML = `
+    <div class="card fade">
+      <h1>${esc(c.heading)}</h1>
+      ${c.body.map(p=>`<p>${esc(p)}</p>`).join('')}
+      <p class="note">${esc(c.feedbackLabel)}<br>${esc(c.feedbackContact)}</p>
+      <button class="btn block" onclick="restart()">${esc(c.restartLabel)}</button>
+      <button class="btn secondary block" onclick="go('model')">${esc(c.modelLabel)}</button>
+    </div>`;
+}
+
+function restart(){ state = { view:'intro', concern:null, stepIndex:0, transcript:[] }; render(); window.scrollTo(0,0); }
+
+render();
+</script>
+</body>
+</html>
