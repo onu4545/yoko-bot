@@ -261,7 +261,7 @@ const CONTENT = {
   },
 
   stepOrder:["empathy","emotion","belief","reframe","action"],
-  replyPlaceholder:"思ったこと、答え、うまく言えない気持ち……そのまま書いてみてください。",
+  replyPlaceholder:"",
   replySend:"送る",
   replySkip:"書かずにつづける",
   replyNote:"書いた内容はこの端末の中だけに残り、どこにも送信・保存されません。",
@@ -451,7 +451,7 @@ function renderReflect(){
   if(state.awaiting){
     controls = `
       <textarea id="reply" placeholder="${esc(CONTENT.replyPlaceholder)}"></textarea>
-      <p class="note">${esc(CONTENT.replyNote)}</p>
+      ${state.step === 0 ? `<p class="note">${esc(CONTENT.replyNote)}</p>` : ''}
       <button class="btn block" id="send">${esc(CONTENT.replySend)}</button>
       <button class="btn secondary block" id="skip">${esc(CONTENT.replySkip)}</button>`;
   } else {
