@@ -64,6 +64,7 @@
 <body>
 <header class="bar">
   <span class="brand">小沼陽子AIbot</span>
+  <button class="safety-link" id="modelLink" onclick="go('model')"></button>
 </header>
 <div id="app"></div>
 <footer class="disc" id="disc"></footer>
@@ -274,6 +275,7 @@ const CONTENT = {
   finishLabel:"今日はここまでにする",
 
   model:{
+    linkLabel:"ビリーフ変容モデル",
     heading:"親のビリーフ変容モデル（5段階）",
     intro:"不登校の親の「世界の見方（ビリーフ）」は、時間をかけて次のように変わっていくことが多い、と考えています。いま自分がどのあたりにいるか、決めつけずに眺めてみてください。行ったり戻ったりするのが普通です。",
     stages:[
@@ -309,6 +311,7 @@ const CONTENT = {
 /* ---------------- 以下は表示の仕組み（通常は編集不要） ---------------- */
 const app = document.getElementById('app');
 document.getElementById('disc').textContent = CONTENT.disclaimer;
+document.getElementById('modelLink').textContent = CONTENT.model.linkLabel;
 
 let state = { view:'intro', concern:null, step:0, awaiting:false, transcript:[] };
 
@@ -406,7 +409,6 @@ function renderIntro(){
       ${CONTENT.meta.intro.map(p=>`<p>${esc(p)}</p>`).join('')}
       <button class="btn block" onclick="go('select')">${esc(CONTENT.meta.startLabel)}</button>
       <button class="btn secondary block" onclick="go('utown')">${esc(CONTENT.utown.heading)}</button>
-      <button class="btn secondary block" onclick="go('model')">${esc(CONTENT.closing.modelLabel)}</button>
     </div>`;
 }
 
@@ -540,7 +542,6 @@ function renderClosing(){
       </div>
       <p class="note">${esc(c.feedbackLabel)}<br>${contactHtml(c.feedbackContact)}</p>
       <button class="btn block" onclick="restart()">${esc(c.restartLabel)}</button>
-      <button class="btn secondary block" onclick="go('model')">${esc(c.modelLabel)}</button>
     </div>`;
 }
 
