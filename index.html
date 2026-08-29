@@ -64,7 +64,7 @@
 <body>
 <header class="bar">
   <span class="brand">小沼陽子AIbot</span>
-  <button class="safety-link" onclick="go('crisis')">いま安全が心配な方へ</button>
+  <button class="safety-link" id="crisisLink" onclick="showCrisis(false)"></button>
 </header>
 <div id="app"></div>
 <footer class="disc" id="disc"></footer>
@@ -105,10 +105,14 @@ const CONTENT = {
       "暴れ","暴力","殴","蹴","刃物","包丁","ベランダ","飛び降り","窓から",
       "助けて","もう限界","限界です"
     ],
-    heading: "その前に、ひとつだけ",
+    linkLabel: "相談できるところ",
+    heading: "ひとりで抱えないでください",
     body: [
       "書いてくださった内容から、お子さんか、あなた自身の安全が心配な状況かもしれない、と感じました。",
-      "こういうときは、気持ちを整理するより先に、人の手を借りてください。ひとりで抱えないで。あなたが助けを求めるのは、弱さではありません。"
+      "こういうときは、気持ちを整理するより先に、人の手を借りてください。あなたが助けを求めるのは、弱さではありません。"
+    ],
+    bodyCalm: [
+      "しんどいとき、ひとりで抱えないために、頼れるところをまとめました。"
     ],
     resources: [
       { name:"いのちの電話", tel:"0570783556", contact:"0570-783-556", note:"つらい気持ちを聞いてもらえます" },
@@ -116,7 +120,8 @@ const CONTENT = {
       { name:"児童相談所", tel:"189", contact:"189", note:"お子さんの安全が心配なとき" },
       { name:"緊急のとき", tel:"110", contact:"110番 ・ 119番", note:"いのちに関わる危険があるときは、迷わず" }
     ],
-    utownNote: "そして、少し落ち着いたら——ひとりで悩み続けないために、優タウンにも話しにきてください。",
+    utownNote: "ひとりで悩み続けないために、優タウンに話しにきてください。",
+    emergencyNote: "急を要するとき（お子さんやあなた自身の安全が心配なとき）は、こちらへ。",
     backLabel: "はじめの画面にもどる"
   },
 
@@ -305,11 +310,13 @@ const CONTENT = {
 /* ---------------- 以下は表示の仕組み（通常は編集不要） ---------------- */
 const app = document.getElementById('app');
 document.getElementById('disc').textContent = CONTENT.disclaimer;
+document.getElementById('crisisLink').textContent = CONTENT.crisis.linkLabel;
 
 let state = { view:'intro', concern:null, step:0, awaiting:false, transcript:[] };
 
 function esc(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 function go(view){ state.view = view; render(); window.scrollTo(0,0); }
+function showCrisis(fromDetection){ state.crisisFromDetection = !!fromDetection; go('crisis'); }
 
 function checkCrisis(text){
   const t = text.toLowerCase();
@@ -343,7 +350,7 @@ function submitReply(text, skipped){
   text = (text || '').trim();
   if(!skipped && text){
     state.transcript.push({ role:'you', text });
-    if(checkCrisis(text)){ go('crisis'); return; }
+    if(checkCrisis(text)){ showCrisis(true); return; }
   }
   if(state.step >= steps.length - 1){
     state.awaiting = false;              // 最後の問いに答えた
@@ -434,7 +441,7 @@ function renderOwn(){
   app.querySelector('#send').onclick = ()=>{
     const text = app.querySelector('#ta').value.trim();
     if(!text) return;
-    if(checkCrisis(text)){ go('crisis'); return; }
+    if(checkCrisis(text)){ showCrisis(true); return; }
     const c = matchConcern(text) || { id:'generic', steps: CONTENT.generic.steps };
     startReflect(c, text);
   };
@@ -476,11 +483,18 @@ function renderReflect(){
 
 function renderCrisis(){
   const c = CONTENT.crisis;
+  const body = state.crisisFromDetection ? c.body : c.bodyCalm;
   app.innerHTML = `
     <div class="card fade" style="border-color:var(--accent)">
       <h1>${esc(c.heading)}</h1>
-      ${c.body.map(p=>`<p>${esc(p)}</p>`).join('')}
-      <div style="margin-top:10px">
+      ${body.map(p=>`<p>${esc(p)}</p>`).join('')}
+
+      <p style="font-weight:700;margin-top:18px">${esc(c.utownNote)}</p>
+      ${utownLinksHtml()}
+      <button class="btn secondary block" onclick="go('utown')">${esc(CONTENT.utown.heading)}</button>
+
+      <p class="note" style="margin-top:22px">${esc(c.emergencyNote)}</p>
+      <div>
         ${c.resources.map(r=>`
           <div class="res">
             <div class="name">${esc(r.name)}</div>
@@ -488,8 +502,7 @@ function renderCrisis(){
             <div class="note">${esc(r.note)}</div>
           </div>`).join('')}
       </div>
-      <p>${esc(c.utownNote)}</p>
-      ${utownLinksHtml()}
+
       <button class="btn secondary block" onclick="go('intro')">${esc(c.backLabel)}</button>
     </div>`;
 }
