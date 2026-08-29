@@ -25,9 +25,10 @@
     font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;
     line-height:1.9; font-size:16.5px; -webkit-text-size-adjust:100%;
   }
-  header.bar{max-width:var(--maxw);margin:0 auto;padding:14px 16px 0;display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+  header.bar{max-width:var(--maxw);margin:0 auto;padding:14px 16px 0;display:flex;justify-content:space-between;align-items:baseline;gap:10px 14px;flex-wrap:wrap}
   .brand{font-weight:700;font-size:15px;letter-spacing:.02em}
-  .safety-link{font-size:12.5px;color:var(--accent);text-decoration:underline;cursor:pointer;background:none;border:0;padding:0;font-family:inherit}
+  .bar-links{display:flex;gap:14px;flex-wrap:wrap;justify-content:flex-end}
+  .safety-link{font-size:12.5px;color:var(--accent);text-decoration:underline;cursor:pointer;background:none;border:0;padding:0;font-family:inherit;white-space:nowrap}
   #app{max-width:var(--maxw);margin:0 auto;padding:16px 16px 8px}
   .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:22px 20px;margin:14px 0;box-shadow:0 1px 2px rgba(0,0,0,.04)}
   h1{font-size:21px;line-height:1.6;margin:.2em 0 .6em}
@@ -64,7 +65,10 @@
 <body>
 <header class="bar">
   <span class="brand">小沼陽子AIbot</span>
-  <button class="safety-link" id="modelLink" onclick="go('model')"></button>
+  <nav class="bar-links">
+    <button class="safety-link" id="utownLink" onclick="go('utown')"></button>
+    <button class="safety-link" id="modelLink" onclick="go('model')"></button>
+  </nav>
 </header>
 <div id="app"></div>
 <footer class="disc" id="disc"></footer>
@@ -312,6 +316,7 @@ const CONTENT = {
 const app = document.getElementById('app');
 document.getElementById('disc').textContent = CONTENT.disclaimer;
 document.getElementById('modelLink').textContent = CONTENT.model.linkLabel;
+document.getElementById('utownLink').textContent = CONTENT.utown.heading;
 
 let state = { view:'intro', concern:null, step:0, awaiting:false, transcript:[] };
 
@@ -408,7 +413,6 @@ function renderIntro(){
       <p class="lead">${esc(CONTENT.meta.subtitle)}</p>
       ${CONTENT.meta.intro.map(p=>`<p>${esc(p)}</p>`).join('')}
       <button class="btn block" onclick="go('select')">${esc(CONTENT.meta.startLabel)}</button>
-      <button class="btn secondary block" onclick="go('utown')">${esc(CONTENT.utown.heading)}</button>
     </div>`;
 }
 
